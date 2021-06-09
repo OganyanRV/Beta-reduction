@@ -25,7 +25,6 @@ public:
         functions["Or"] = "(\\b (\\c b True c))";
         functions["Not"] = "(\\b b False True)";
         functions["IsZero"] = "(\\index index (\\c False) True)";
-//        functions["Test"] = "(\\l (\\m (\\index l m index)))";
 
         // Nums
 

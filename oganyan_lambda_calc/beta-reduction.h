@@ -11,6 +11,8 @@
 #include <stack>
 #include "correct_syntax_check.h"
 
+//#define DEBUG
+
 using std::cout;
 using std::set;
 using std::map;
@@ -23,6 +25,7 @@ const int opening_bracket = -2;
 const int closing_bracket = -3;
 const int unprocessed = -4;
 
+//  class for de_bruijn. index - distance, term - name, alpha_conversion_count - count of "'"
 class Term {
 public:
     int index;
@@ -42,6 +45,8 @@ public:
             index(index_), term(std::move(term_)), alpha_conversion_count(0) {}
 
 };
+
+//  Making appropriate form of term for output in future
 
 string GetOutPutString(const vector<Term> &term_vec_original) {
     auto term_vec = term_vec_original;
@@ -74,7 +79,7 @@ string GetOutPutString(const vector<Term> &term_vec_original) {
         }
     }
 
-    // Need to rename back unnecessary renamed variables
+    // Need to rename back not necessary renamed variables
     map<string, set<int>> alpha_conversion_map;
 
     alpha_conversion_map["("].insert(0);
@@ -125,6 +130,7 @@ string GetOutPutString(const vector<Term> &term_vec_original) {
     return result_string_term;
 }
 
+//  Basically inserts brackets before every lambda and at the end of lambda's scope
 
 string MakeCorrectForm(const string &term) {
     string return_term = term;
@@ -163,7 +169,7 @@ string MakeCorrectForm(const string &term) {
     return return_term;
 }
 
-
+//  Calculates term with De Bruin Notation
 vector<Term> ConvertToDeBruijnNotation(const vector<string> &term_vec) {
 
     vector<Term> term_de_bruijn(term_vec.size(), Term());
@@ -208,7 +214,6 @@ vector<Term> ConvertToDeBruijnNotation(const vector<string> &term_vec) {
                     }
                     brackets_type.pop();
                     if (brackets_in_lambda_count == end_lambda - 1) {
-                        cout << "ebal" << "\n";
                         end_lambda = -1;
                     }
                     continue;
@@ -219,13 +224,13 @@ vector<Term> ConvertToDeBruijnNotation(const vector<string> &term_vec) {
                     continue;
                 }
                 if (cur_sub_term == cur_term) {
-                    end_lambda = brackets_in_lambda_count; // ?
+                    end_lambda = brackets_in_lambda_count;
                 }
             }
         }
     }
 
-    //  Processing for FREE terms
+    //  Pre-Processing for FREE terms.
     map<string, int> free_terms;
     for (int elem = static_cast<int>(term_vec.size()) - 1; elem >= 0; --elem) {
         if (term_de_bruijn[elem].index != unprocessed) {
@@ -235,9 +240,8 @@ vector<Term> ConvertToDeBruijnNotation(const vector<string> &term_vec) {
     }
 
     int count_of_bound_terms = 0;
-    // Similarly as previous one
     stack<bool> brackets_type;
-
+    //  Processing for FREE terms
     for (size_t elem = 0; elem < (int) term_vec.size(); ++elem) {
         if (term_vec[elem] == "(") {
             if (term_vec[elem + 1][0] == '\\') {
@@ -262,11 +266,111 @@ vector<Term> ConvertToDeBruijnNotation(const vector<string> &term_vec) {
     return term_de_bruijn;
 }
 
+//  Almost the same as previous one, but it includes alpha-conversion while processing
+
+vector<Term> RecalculateDeBrujnNotation(const vector<Term> &term_vec) {
+    vector<Term> term_de_bruijn(term_vec.size(), Term());
+    map<string, int> usage_counter;
+
+    // Main part of processing indexes and making alpha-conversion for NOT FREE (bounded) terms
+    for (size_t cur_elem = 0; cur_elem < term_vec.size(); ++cur_elem) {
+        if (term_de_bruijn[cur_elem].index != unprocessed) {
+            continue;
+        }
+        string cur_term = term_vec[cur_elem].term;
+        if (cur_term == "(") {
+            term_de_bruijn[cur_elem] = Term(opening_bracket, cur_term);
+            continue;
+        }
+        if (cur_term == ")") {
+            term_de_bruijn[cur_elem] = Term(closing_bracket, cur_term);
+            continue;
+        }
+        if (cur_term[0] == '\\') {
+            term_de_bruijn[cur_elem] = Term(lambda, cur_term, usage_counter[cur_term.substr(1)]++);
+            int brackets_in_lambda_count = 0;
+            int end_lambda = -1;
+            // true if opening bracket is for the following lambda ((\n n)); false if opening bracket is for application ((a b))
+            stack<bool> brackets_type;
+            for (size_t j = cur_elem + 1; j < term_vec.size(); ++j) {
+                string cur_sub_term = term_vec[j].term;
+                if (cur_sub_term == "(") {
+                    if (term_vec[j + 1].term[0] == '\\') {
+                        brackets_type.push(true);
+                        brackets_in_lambda_count++;
+                    } else {
+                        brackets_type.push(false);
+                    }
+                    continue;
+                } else if (cur_sub_term == ")") {
+                    if (brackets_type.empty()) {
+                        break;
+                    }
+                    if (brackets_type.top()) {
+                        brackets_in_lambda_count--;
+                    }
+                    brackets_type.pop();
+                    if (brackets_in_lambda_count == end_lambda - 1) {
+                        end_lambda = -1;
+                    }
+                    continue;
+                }
+                if ((end_lambda == -1 && cur_sub_term == cur_term.substr(1))
+                    && (term_vec[j].alpha_conversion_count == term_vec[cur_elem].alpha_conversion_count)) {
+                    term_de_bruijn[j] = Term(brackets_in_lambda_count, cur_sub_term,
+                                             term_de_bruijn[cur_elem].alpha_conversion_count);
+                    continue;
+                }
+                if ((cur_sub_term == cur_term) &&
+                    (term_vec[j].alpha_conversion_count == term_vec[cur_elem].alpha_conversion_count)) {
+                    end_lambda = brackets_in_lambda_count;
+                }
+            }
+        }
+    }
+
+    //  Pre-Processing for FREE terms
+    map<string, int> free_terms;
+    for (int elem = static_cast<int>(term_vec.size()) - 1; elem >= 0; --elem) {
+        if (term_de_bruijn[elem].index != unprocessed) {
+            continue;
+        }
+        free_terms[term_vec[elem].term] = free_terms.size() - 1;
+    }
+
+    int count_of_bound_terms = 0;
+    stack<bool> brackets_type;
+
+    //  Processing for FREE terms
+    for (size_t elem = 0; elem < (int) term_vec.size(); ++elem) {
+        if (term_vec[elem].term == "(") {
+            if (term_vec[elem + 1].term[0] == '\\') {
+                count_of_bound_terms++;
+                brackets_type.push(true);
+            } else {
+                brackets_type.push(false);
+            }
+        }
+        if (term_vec[elem].term == ")") {
+            if (brackets_type.top()) {
+                count_of_bound_terms--;
+            }
+            brackets_type.pop();
+        }
+        if (term_de_bruijn[elem].index == unprocessed) {
+            term_de_bruijn[elem] = Term(free_terms[term_vec[elem].term] + count_of_bound_terms, term_vec[elem].term,
+                                        usage_counter[term_vec[elem].term]);
+        }
+    }
+
+    return term_de_bruijn;
+}
+
+//  Removes no need brackets for correct working of beta-reduction
 vector<Term> RemoveUnnecessaryBrackets(const vector<Term> &term_vec) {
     auto return_vec = term_vec;
 
     //  Remove (), (\x) (x)
-
     while (true) {
         bool found_useless_brackets = false;
         for (size_t elem = 0; elem < return_vec.size(); ++elem) {
@@ -323,16 +427,20 @@ vector<Term> RemoveUnnecessaryBrackets(const vector<Term> &term_vec) {
     return return_vec;
 }
 
-// Normal strategy. The outermost left redex
-vector<string> ReduceNormalStrat(const vector<Term>& term_vec_original) {
+// Reduce term in De Brujn's form with normal strategy (application for the outermost left redex)
+vector<string> ReduceNormalStrat(const vector<Term> &term_vec_original) {
     auto term_vec = term_vec_original;
     vector<string> result_reduce;
     while (true) {
-        vector<Term> current_reduce_step; // Массив подставляемых значений
-        //  Удаляем ненужные скобки
+        vector<Term> current_reduce_step;
+
         term_vec = RemoveUnnecessaryBrackets(term_vec);
         result_reduce.push_back(GetOutPutString(term_vec));
-        // Если Бета-редукция бесконечна (нет нормальной формы)
+
+        //  For some kind of terms (f.e. (\x x x)...) we need to recalculate DeBrujn indexes
+        term_vec = RecalculateDeBrujnNotation(term_vec);
+
+        //  If Beta-reduction is infinite and does not have normal form ((f.e Combinator Omega))
         if (result_reduce.size() >= 2) {
             if (result_reduce[result_reduce.size() - 1] == result_reduce[result_reduce.size() - 2]) {
                 result_reduce.clear();
@@ -349,7 +457,7 @@ vector<string> ReduceNormalStrat(const vector<Term>& term_vec_original) {
                 continue;
             }
             int brackets_count = 0;
-            // Получаем выражение, к которой применяем аппликацию
+            //  Getting the expression into which we will perform the substitution
             int lambda_end_bracket = static_cast<int>(term_vec.size()) - 1;
             for (size_t j = elem + 1; j < term_vec.size(); ++j) {
                 if (term_vec[j].index == opening_bracket) {
@@ -363,12 +471,12 @@ vector<string> ReduceNormalStrat(const vector<Term>& term_vec_original) {
                 }
             }
 
-            // Если правая скобка - последний элемент, то не к чему применять аппликацию - скип
+            //  Found no substituted expression
             if (lambda_end_bracket == term_vec.size() - 1) {
                 continue;
             }
 
-            // Массив для подставляемого выражения
+            // Found one
             vector<Term> substituted_term;
             if (term_vec[lambda_end_bracket + 1].index >= 0) {
                 substituted_term.push_back(term_vec[lambda_end_bracket + 1]);
@@ -387,20 +495,21 @@ vector<string> ReduceNormalStrat(const vector<Term>& term_vec_original) {
                     }
                 }
             }
-            //  Если у терма нет аппликации
+
             if (substituted_term.empty()) {
                 continue;
             }
 
-            // Формируем новую строку. Сначала записываем то что было до лямбды
             for (size_t elem_before_application = 0; elem_before_application < elem - 1; ++elem_before_application) {
                 current_reduce_step.push_back(term_vec[elem_before_application]);
             }
 
-            // Говорит о том, находится ли лямбда после открывающей скобки
+            //  True if lambda stays after opening bracket
             stack<bool> bracket_type;
-            brackets_count = 0; // подсчитывает количество действующих лямбд. НУжно для де брейна
+            brackets_count = 0; //  Count of lambdas in current scope
 
+            //  The main part. The one step of beta-reduction is processing here.
+            //  I don't know language that well to describe everything whats going here
             for (size_t j = elem + 1; j < lambda_end_bracket; j++) {
                 if (term_vec[j].index == opening_bracket) {
                     if (term_vec[j + 1].index == lambda) {
@@ -417,35 +526,32 @@ vector<string> ReduceNormalStrat(const vector<Term>& term_vec_original) {
                     bracket_type.pop();
                 }
                 if (term_vec[j].index < brackets_count) {
-                    // лямбда или скобка
                     current_reduce_step.push_back(term_vec[j]);
                 } else if (term_vec[j].index > brackets_count) {
-                    // тело относится к внешней лямбде
                     current_reduce_step.emplace_back(term_vec[j].index - 1, term_vec[j].term,
-                                 term_vec[j].alpha_conversion_count);
+                                                     term_vec[j].alpha_conversion_count);
                 } else {
-                    // тело относится к лямбде, к которой применяется аппликация
-                    stack<bool> item_bracket_type;
+                    stack<bool> substituted_term_bracket_type;
                     int item_cnt = 0;
                     for (size_t k = 0; k < substituted_term.size(); ++k) {
                         if (substituted_term[k].index == opening_bracket) {
                             if (substituted_term[k + 1].index == lambda) {
-                                item_bracket_type.push(true);
+                                substituted_term_bracket_type.push(true);
                                 item_cnt++;
                             } else {
-                                item_bracket_type.push(false);
+                                substituted_term_bracket_type.push(false);
                             }
                         }
                         if (substituted_term[k].index == closing_bracket) {
-                            if (item_bracket_type.top()) {
+                            if (substituted_term_bracket_type.top()) {
                                 item_cnt--;
                             }
-                            item_bracket_type.pop();
+                            substituted_term_bracket_type.pop();
                         }
                         if (item_cnt <= substituted_term[k].index) {
                             current_reduce_step.emplace_back(substituted_term[k].index + brackets_count,
-                                            substituted_term[k].term,
-                                            substituted_term[k].alpha_conversion_count);
+                                                             substituted_term[k].term,
+                                                             substituted_term[k].alpha_conversion_count);
                         } else {
                             current_reduce_step.push_back(substituted_term[k]);
                         }
@@ -467,34 +573,59 @@ vector<string> ReduceNormalStrat(const vector<Term>& term_vec_original) {
     return result_reduce;
 }
 
+
 vector<string> BetaReduction(const string &term) {
+    //  Check for correct input
     if (!IsSyntaxCorrect(term)) {
         return vector<string>();
     }
+
+    //  Make appropriate form of term
     auto good_form_term = MakeCorrectForm(term);
     if (!IsSyntaxCorrect(good_form_term)) {
         return vector<string>();
     }
+
+    //  Convert string to vector
     vector<string> term_vec = ParseToVec(good_form_term);
+
+    //  Check for correct syntax again
+
+    if (!IsSyntaxCorrect(term_vec)) {
+        return vector<string>();
+    }
+
+    //  Find Functions from Library and decompose them
+
     if (!ChangeLibFuncsToTerms(term_vec)) {
         return vector<string>();
     }
+
+    //  Calculate De Brujn Notation
     vector<Term> term_de_bruijn = ConvertToDeBruijnNotation(term_vec);
 
-//    for (auto x: term_de_bruijn) {
-//        cout << x.term << " ";
-//    }
-//    cout << "\n";
-//
-//    for (auto x: term_de_bruijn) {
-//        cout << x.index << " ";
-//    }
-//    cout << "\n";
-//
-//    for (auto x: term_de_bruijn) {
-//        cout << x.alpha_conversion_count << " ";
-//    }
-//    cout << "\n";
+#ifdef DEBUG
+
+    cout << "\n";
+
+    for (const auto& elem: term_de_bruijn) {
+        cout << elem.term << " ";
+    }
+    cout << "\n";
+
+    for (const auto& elem: term_de_bruijn) {
+        cout << elem.index << " ";
+    }
+    cout << "\n";
+
+    for (const auto& elem: term_de_bruijn) {
+        cout << elem.alpha_conversion_count << " ";
+    }
+    cout << "\n";
+#endif
+
+    //  Beta-reduction
+
     vector<string> reduction_result = ReduceNormalStrat(term_de_bruijn);
     return reduction_result;
 }

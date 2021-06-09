@@ -14,6 +14,8 @@ using std::string;
 using std::vector;
 using std::to_string;
 
+//  Check if term is correctly written. If not, returns false and prints the mistake.
+
 bool IsSyntaxCorrect(const string &term) {
 
     // Check for correct brackets
@@ -44,8 +46,8 @@ bool IsSyntaxCorrect(const string &term) {
     //  Check for existing lambdas
 
     bool exist_lib_fun = false;
-    for (size_t num = 0; num < term.size(); ++num) {
-        if ((term[num] >= 'A' && term[num] <= 'Z')) {
+    for (char num : term) {
+        if ((num >= 'A' && num <= 'Z')) {
             exist_lib_fun = true;
             break;
         }
@@ -82,6 +84,26 @@ bool IsSyntaxCorrect(const string &term) {
     return true;
 }
 
+bool IsSyntaxCorrect(const vector<string> &term_vec) {
+    for (size_t elem = 0; elem < term_vec.size() - 1; ++elem) {
+        if (term_vec[elem][0] == '\\') {
+            bool is_correct = false;
+            for (size_t j = elem + 1; j < term_vec.size(); ++j) {
+                if (term_vec[j] != ")") {
+                    is_correct = true;
+                }
+            }
+            if (!is_correct) {
+                cout << "Invalid syntax: there is no variable after lambda" << "\n";
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Basically just transforms string to vector
+
 vector<string> ParseToVec(string term) {
     vector<string> term_vector;
     LibFuncs library;
@@ -114,7 +136,7 @@ vector<string> ParseToVec(string term) {
     return term_vector;
 }
 
-
+//  Finds library functions in term (such as True, False, etc) and decompose them
 bool ChangeLibFuncsToTerms(vector<string> &term_vec) {
     LibFuncs library;
     while (true) {
@@ -123,8 +145,8 @@ bool ChangeLibFuncsToTerms(vector<string> &term_vec) {
         for (size_t elem = 0; elem < term_vec.size(); elem++) {
             bool found_capital = false;
             string cur_term = term_vec[elem];
-            for (size_t j = 0; j < cur_term.size(); ++j) {
-                if ((cur_term[j] >= 'A') && (cur_term[j] <= 'Z')) {
+            for (char letter : cur_term) {
+                if ((letter >= 'A') && (letter <= 'Z')) {
                     found_capital = true;
                     break;
                 }
