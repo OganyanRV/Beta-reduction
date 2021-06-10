@@ -24,7 +24,7 @@ public:
         functions["And"] = "(\\b (\\c b c False))";
         functions["Or"] = "(\\b (\\c b True c))";
         functions["Not"] = "(\\b b False True)";
-        functions["IsZero"] = "(\\index index (\\c False) True)";
+        functions["IsZero"] = "(\\n n (\\c False) True)";
 
         // Nums
 
@@ -34,10 +34,10 @@ public:
 
         // Arithmetic functions
 
-        functions["Scc"] = "(\\index (\\s (\\z s (index s z))))";
-        functions["Plus"] = "(\\index (\\m (\\s (\\z (index s (m s z))))))";
-        functions["Mult"] = "(\\x (\\y (x (Plus y) z)))";
-        functions["Pow"] = "(\\index (\\m (\\s (\\ z (index s z)))))";
+        functions["Scc"] = "(\\n (\\s (\\z s (n s z))))";
+        functions["Plus"] = "(\\n (\\m (\\s (\\z (n s (m s z))))))";
+        functions["Mult"] = "(\\n (\\m (\\s n (m s))))";
+        functions["Pow"] = "(\\n (\\m (\\s (\\ z (n s z)))))";
 
         //  Combinators
 
