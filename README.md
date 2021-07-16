@@ -1,7 +1,7 @@
 # Lambda-Calculus. Beta-reduction of lambda terms with de Braun indices
 Course work of [Oganyan Robert](https://t.me/robasti). Third year of study, 6th term.
 
-Here is a simple **interpreter** for *beta-reduction* of terms. **Beta reduction** of lambda terms has been implemented using **de Braun indices** and related: **alpha conversions**, **naming contexts**, **shifts** and **substitutions**.
+Here is a simple **interpreter** for *beta-reduction* of terms. **Beta reduction** of lambda terms has been implemented using **de Bruijn (de Braun) notation** and related: **alpha conversions**, **naming contexts**, **shifts** and **substitutions**.
 
 Implemented with C++14, JetBrains Clion.
 
