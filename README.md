@@ -1,5 +1,6 @@
 # Lambda-Calculus. Beta-reduction of lambda terms with de Braun indices
-**This repository is outdated. The actualactual project is ![here](https://github.com/OganyanRV/Lambda-calculus-interpreterhttps://github.com/OganyanRV/Lambda-calculus-interpreter). The problem with this version is that I do not use an abstract syntax tree to find redexes, I look for them in a string, which works, but ideologically wrongideologically wrong.**
+**This repository is outdated. The actualactual project is [here](https://github.com/OganyanRV/Lambda-calculus-interpreterhttps://github.com/OganyanRV/Lambda-calculus-interpreter). The problem with this version is that I do not use an abstract syntax tree to find redexes, I look for them in a string, which works, but ideologically wrongideologically wrong.**
+
 Course work of [Oganyan Robert](https://t.me/robasti). Third year of study, 6th term.
 
 Here is a simple **interpreter** for *beta-reduction* of terms. **Beta reduction** of lambda terms has been implemented using **de Bruijn (de Braun) notation** and related: **alpha conversions**, **naming contexts**, **shifts** and **substitutions**.
