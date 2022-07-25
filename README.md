@@ -1,5 +1,5 @@
 # Lambda-Calculus. Beta-reduction of lambda terms with de Braun indices
-**This repository is outdated. The actual project is [here](https://github.com/OganyanRV/Lambda-calculus-interpreterhttps://github.com/OganyanRV/Lambda-calculus-interpreter). The problem with this version is that I do not use an abstract syntax tree to find redexes, I look for them in a string, which works, but it is ideologically wrong.**
+**This repository is outdated. The actual project is [here](https://github.com/OganyanRV/Lambda-calculus-interpreter). The problem with this version is that I do not use an abstract syntax tree to find redexes, I look for them in a string, which works, but it is ideologically wrong.**
 
 Course work of [Oganyan Robert](https://t.me/robasti). Third year of study, 6th term.
 
